@@ -152,7 +152,7 @@ import { Message, MessageBox } from "element-ui";
 import imgRadar from "@/assets/images/radar.png";
 import mqtt from 'mqtt/dist/mqtt'
 import axios from 'axios'
-import { splitArray, extractTrackData } from "./index";
+import { splitArray, extractTrackData, drawText } from "./index";
 import Metting from "@/components/metting/index.vue";
 
 export default {
@@ -651,7 +651,7 @@ export default {
           }
 
           let areaTitle = this.baseList.find(item => item.areaType==pointArr[1]).title;
-          this.drawText(context, areaTitle, startX + maxXDist / 2, startY, "#080808");
+          drawText(context, areaTitle, startX + maxXDist / 2, startY, "#080808");
         };
         this.currentArea.forEach((item) => {
           rectangleToArea(item);
@@ -716,7 +716,7 @@ export default {
       }
       context.fillStyle = color;
       context.fillRect(startX, startY, maxXDist, maxYDist);
-      this.drawText(context, '', startX + maxXDist / 2, startY, "#080808");
+      drawText(context, '', startX + maxXDist / 2, startY, "#080808");
     },
     drawAreaPoint(coords, isRounding = false) {
       const { grap } = this.drawConfig;
@@ -758,16 +758,6 @@ export default {
         const maxYDist = yDist;
         return [startX, startY, maxXDist, maxYDist];
       }
-    },
-    drawText(context, text, x, y, color, size = 18) {
-      //文字部分
-      context.beginPath();
-      context.textAlign = "center";
-      context.fillStyle = color;
-      context.font = `${size}px Arial`;
-      const metrics = context.measureText(text);
-      //文字统一偏移
-      context.fillText(text, x, y + 30);
     },
     // 获取鼠标位置
     getMousePosition(event) {

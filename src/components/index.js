@@ -36,3 +36,11 @@ export function extractTrackData(trackData, type) {
     }
     return splitArray(trackData);
 }
+
+export function drawText(context, text, x, y, color, size = 18) {
+    context.beginPath();
+    context.textAlign = "center";
+    context.fillStyle = color;
+    context.font = `${size}px Arial`;
+    context.fillText(text, x, y + 30);
+}
