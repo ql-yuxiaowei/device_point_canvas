@@ -58,7 +58,7 @@
           <el-table-column label="value" class-name="column-bg-color-editable" width="300" show-overflow-tooltip>
             <template scope="scope">
               <div class="input-box">
-                <el-input size="small" v-model="scope.row.value" :disabled="['fall_param', 'heart_breath_param', 'accelera', 'wifi_rssi'].includes(scope.row.key)"></el-input>
+                <el-input size="small" v-model="scope.row.value" :disabled="['fall_param', 'heart_breath_param', 'accelera', 'wifi_rssi', 'declare_area'].includes(scope.row.key)"></el-input>
               </div>
             </template>
           </el-table-column>
@@ -738,7 +738,6 @@ export default {
       MessageBox.confirm("确认删除选中区域吗？", "系统提示").then(() => {
         let declare_area = clickArea.toString();
         declare_area = declare_area.replace(/^([^,]+),([^,]+)(.*)$/, '$1,0$3');
-        
         const params = {
           uid: this.currentUid,
           properties: {
@@ -1059,7 +1058,6 @@ export default {
       if (z < 1.5 || z > 3.5) {
         return { type: 1, msg: '监护床高度必须在1.5米到3.5米之间' };
       }
-      console.log('监护床的x y z轴分别是', x, y, z);
       if (installType == 1 && (x > 0.5 || y > 1.5)) {
         return { type: 2, msg: '监护床侧装尺寸不能大于0.5米' };
       } else if (installType == 2 && (x > 0.5 || y > 1.5)) {
