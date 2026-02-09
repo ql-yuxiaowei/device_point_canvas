@@ -75,7 +75,6 @@
               <el-radio-button  v-for="(item, index) in baseList.slice(1,6)" :key="index"
                 :label="item.type" :disabled="item.disabled" :id="item.id">
                 {{item.title}}
-                <i v-if="!!item.badge" class="el-icon-warning" style="position: absolute;top: 0;right: 2px;font-size: 18px;color: #f6ab28;"></i>
               </el-radio-button>
             </el-radio-group>
             <div style="flex:1;display:flex;align-items:center;height:40px;margin-left:15px;">
@@ -197,75 +196,14 @@ export default {
         color: "#bbb",
       },
       baseList: [
-        {
-          type: 0,
-          areaType: null,
-          color: "rgba(108, 170, 176, 0.9)",
-          name: require('@/assets/chartBed/border.png'),
-          title: "边界",
-          badge: null,
-          menu: [],
-        },
-        {
-          type: 1,
-          areaType: 2,
-          color: "rgba(132, 185, 197, 0.5)",
-          name: require('@/assets/chartBed/bed.png'),
-          title: "床",
-          badge: null,
-          menu: [],
-        },
-        {
-          type: 2,
-          areaType: 4,
-          color: "rgba(202, 228, 214, 0.9)",
-          name: require('@/assets/chartBed/door.png'),
-          title: "门",
-          badge: null,
-          menu: [],
-        },
-        {
-          type: 3,
-          areaType: 3,
-          color: "rgba(230, 230, 230, 0.9)",
-          name: require('@/assets/chartBed/ganrao.png'),
-          title: "干扰区域",
-          badge: null,
-          menu: [],
-        },
-        {
-          type: 4,
-          areaType: 7,
-          color: "rgba(173,185,202, 0.7)",
-          title: "工具",
-          badge: null,
-          menu: [],
-        },
-        {
-          type: 5,
-          areaType: 6,
-          color: "rgba(192, 0, 0, 0.3)",
-          title: "告警区域",
-          badge: null,
-          menu: [],
-        },
-        {
-          type: 6,
-          areaType: 1,
-          color: "rgba(108, 170, 176, 0.9)",
-          name: require('@/assets/chartBed/area.png'),
-          title: "自定义",
-          badge: null,
-          menu: [],
-        },
-        {
-          type: 7,
-          areaType: 5,
-          color: "rgba(197, 152, 63, 0.4)",
-          title: "监护床",
-          badge: null,
-          menu: [],
-        },
+        { type: 0, areaType: null, color: "rgba(108, 170, 176, 0.9)", title: "边界", },
+        { type: 1, areaType: 2, color: "rgba(132, 185, 197, 0.5)", title: "床", },
+        { type: 2, areaType: 4, color: "rgba(202, 228, 214, 0.9)", title: "门", },
+        { type: 3, areaType: 3, color: "rgba(230, 230, 230, 0.9)", title: "干扰区域", },
+        { type: 4, areaType: 7, color: "rgba(173,185,202, 0.7)", title: "家具", },
+        { type: 5, areaType: 6, color: "rgba(192, 0, 0, 0.3)", title: "告警区域", },
+        { type: 6, areaType: 1, color: "rgba(108, 170, 176, 0.9)", title: "自定义", },
+        { type: 7, areaType: 5, color: "rgba(197, 152, 63, 0.4)", title: "监护床", },
       ],
       currentType: "",
       currentTypeId: "",
