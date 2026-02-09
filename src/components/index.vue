@@ -148,7 +148,6 @@ export default {
       dotColor: 'gray',
       isHasPeople: false,
       isNo16time: null,
-      currentDev: JSON.parse(window.localStorage.getItem("currentDev")) || {},
       timer: null,
       TrackData: [],
       TrackDataLen: 0,
@@ -1209,7 +1208,7 @@ export default {
             this.AreaDialog.loading = false;
             this.clearData();
             this.openAreaDialog();
-          }, 100);
+          }, 1000);
         });
       }).catch(() => {
         Message.error('操作失败');
