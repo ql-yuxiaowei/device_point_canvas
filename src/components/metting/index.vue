@@ -109,9 +109,9 @@ export default {
         window.setTimeout(() => {
           let params = {
             uid: this.uid,
-            licenseKey: this.startVoiceObj?.licenseKey, invoke: this.invoke,
+            lisenseKey: this.startVoiceObj?.lisenseKey, invoke: this.invoke,
           };
-          axios.post(`/prod-api/stopVoice?uid=${this.uid}&licenseKey=${this.startVoiceObj?.licenseKey}`, {}).then((res) => {
+          axios.post(`/prod-api/stopVoice?uid=${this.uid}&lisenseKey=${this.startVoiceObj?.lisenseKey}`, {}).then((res) => {
             if (res.data.code !== 200) {
                 this.errorMsg = '通道关闭异常';
                 reject(new Error('通道关闭异常'));
