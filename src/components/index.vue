@@ -23,7 +23,7 @@
         </div>
       </div>
       <el-card class="box-card mb10" id="chartsMax" style="height: 790px; position: relative">
-        <div slot="header" class="clearfix">
+        <div slot="header" class="clearfix" style="display: flex;justify-content: space-between;">
           <span>轨迹监控</span>
         </div>
         <el-row style="background: #fff; text-align: center; display: flex; flex-flow: column nowrap; align-items: center">
@@ -46,9 +46,9 @@
       </el-card>
       
       <el-card class="box-card mb10" id="chartsMax" style="flex: 1; height: 790px; position: relative">
-        <div slot="header" class="clearfix">
+        <div slot="header" class="clearfix" style="display: flex;justify-content: space-between;">
           <span>功能属性</span>
-          <el-button type="primary" size="small" @click="saveRadarProps" style="float: right;">保存</el-button>
+          <el-button type="primary" size="small" @click="saveRadarProps">保存</el-button>
         </div>
         <el-table ref="multipleTable" :data="radarPropArr" height="700px">
           <el-table-column label="key" align="center" prop="key" />
