@@ -1,0 +1,94 @@
+
+    .flex-wp-no {
+        flex-wrap: nowrap;
+    }
+
+    .flex-wp {
+        flex-wrap: wrap;
+    }
+
+    .flex-s {
+        flex-shrink: 0;
+    }
+
+    .flex {
+        display: flex;
+    }
+
+    .flex-a-ct {
+        display: flex;
+        align-items: center;
+    }
+
+    .flex-a-cs {
+        display: flex;
+        align-items: flex-start;
+    }
+
+    .flex-j-ct {
+        display: flex;
+        justify-content: center;
+    }
+
+    .flex-j-ct--a-ct {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .flex-j-sb {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .flex-j-sb--a-ct {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .flex-j-sa--a-ct {
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+    }
+
+    .flex-j-se--a-ct {
+        display: flex;
+        align-items: center;
+        justify-content: space-evenly;
+    }
+
+    /** flex-direction: column; 模块 */
+    //  col => column
+    .flex-col {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .j-flex-end {
+        justify-content: flex-end;
+    }
+
+    .flex-col-j-ct {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .flex-col-j-sb {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .flex-col-j-ct--a-ct {
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .flex-end {
+        align-items: flex-end;
+    }
