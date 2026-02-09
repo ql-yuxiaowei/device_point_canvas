@@ -12,7 +12,7 @@
             addr: <el-input v-model="mqttConfig.host" placeholder="请输入mqtt服务器地址" style="width: 200px; margin-right: 10px;"></el-input>
           </div>
           <div style="margin-bottom: 20px;">
-            subTime: <el-input v-model="mqttConfig.subTime" placeholder="请输入订阅时长" style="width: 200px; margin-right: 10px;">
+            subTime: <el-input v-model="mqttConfig.subTime" placeholder="请输入订阅时长" @change="changeSubTime" style="width: 200px; margin-right: 10px;">
               <template slot="append">s</template>
             </el-input>
           </div>
@@ -40,6 +40,9 @@
           <div style="margin-top: 10px">
             <el-button type="primary" plain @click="openAreaDialog" style="position:relative;">
               编辑区域
+            </el-button>
+            <el-button type="primary" plain @click="handleCallDev()" :disabled="isMetting" style="position:relative;">
+              呼叫设备
             </el-button>
           </div>
         </el-row>
@@ -98,6 +101,15 @@
               <template slot="prepend"><img style="width: 14px; height: 14px" src="@/assets/chartBed/area-height.png" /></template>
               <template slot="append">CM</template></el-input>
           </el-row>
+          <el-row style="margin-top:40px;padding:0 10px;">
+            <p style="font-size:18px;font-weight:bold;">位置调整</p>
+            <div style="margin:10px 0;">
+              <el-button :disabled="!currentType" @click="handleFinalyArea('moveUp')" id="pos-up">上移</el-button>
+              <el-button :disabled="!currentType" @click="handleFinalyArea('moveDown')" id="pos-down">下移</el-button>
+              <el-button :disabled="!currentType" @click="handleFinalyArea('moveLeft')" id="pos-left">左移</el-button>
+              <el-button :disabled="!currentType" @click="handleFinalyArea('moveRight')" id="pos-right">右移</el-button>
+            </div>
+          </el-row>
           <div style="position:absolute;bottom:0;left:50%;text-align: center;transform:translate(-50%,0%);">
             <el-button @click="handleCancleArea">取消</el-button>
             <el-button type="primary" @click="handleAddArea" id="area-save">保存</el-button>
@@ -105,6 +117,11 @@
         </section>
       </div>
     </el-dialog>
+
+    <!-- 语音通话 -->
+    <div v-if="showMetting" style="position:absolute;top:30%;left:50%;transform:translate(-50%, -50%);width:50vh;height:80vh;z-index: 999;">
+      <metting ref="mettingRef" :uid="currentUid" @metting-event="handleMettingEvent" />
+    </div>
     
     <!-- 区域图标 -->
     <div>
@@ -136,9 +153,11 @@ import imgRadar from "@/assets/images/radar.png";
 import mqtt from 'mqtt/dist/mqtt'
 import axios from 'axios'
 import { splitArray, extractTrackData } from "./index";
+import Metting from "@/components/metting/index.vue";
 
 export default {
   name: "RoomDetails",
+  components: { Metting, },
   data() {
     return {
       drawerWidth: 800,
@@ -150,8 +169,8 @@ export default {
       isNo16time: null,
       timer: null,
       TrackData: [],
-      TrackDataLen: 0,
       newTrackData: [],
+      TrackDataLen: 0,
       CornerData: {
         installType: "0",
         height: "",
@@ -166,7 +185,6 @@ export default {
         open: false,
       },
       currentUid: localStorage.getItem('currentUid') || 'AD8A61A002FF',
-      currentValidArea: [], //当前的有效区域
       currentInsType: 1, // 默认侧装
       currentRectangle: [], // 房间坐标
       currentArea: [], // 雷达区域
@@ -253,6 +271,8 @@ export default {
       currentTypeId: "",
       sizeWidth: null,
       sizeHeight: null,
+      showMetting: false,
+      isMetting: false,
       radarProp: {},
       radarPropArr: [],
       radarPropArrSource: [],
@@ -265,7 +285,7 @@ export default {
         protocolVersion: 5,
         clean: true,
         connectTimeout: 30 * 1000,
-        subTime: 10,
+        subTime: localStorage.getItem('subTime') || 10,
       },
       mqttConnected: false,
       mqttClient: null
@@ -301,6 +321,9 @@ export default {
   methods: {
     changeUid() {
       localStorage.setItem('currentUid', this.currentUid);
+    },
+    changeSubTime() {
+      localStorage.setItem('subTime', this.mqttConfig.subTime);
     },
     expTrack(track) {
       const tempData = [[], [], [], [], [], [], [], []];
@@ -499,7 +522,6 @@ export default {
             }
           }
         });
-      // context.draw();
     },
     trackFresh(context) {
       function getBezierPoint(startX, startY, endX, endY, t) {
@@ -576,7 +598,6 @@ export default {
       context.fillRect(0, 0, this.drawWidth, this.drawHeight);
       context.fillStyle = "#f9f9f9";
       context.fillRect(startX, startY, maxXDist, maxYDist);
-      this.currentValidArea = [startX, startY, maxXDist, maxYDist]; //当前的有效区域
 
       // 绘制区域
       if (!!this.currentArea.length) {
@@ -746,7 +767,6 @@ export default {
       context.font = `${size}px Arial`;
       const metrics = context.measureText(text);
       //文字统一偏移
-      // context.fillText(text, x + metrics.width / 2, y + 17);
       context.fillText(text, x, y + 30);
     },
     // 获取鼠标位置
@@ -788,12 +808,13 @@ export default {
       }
       
       MessageBox.confirm("确认删除选中区域吗？", "系统提示").then(() => {
-        const regex = new RegExp(`(^|,)\\{${clickArea[0][0]},.*?\\}(,|$)`, 'g');
-        const result = this.radarProp['declare_area'].replace(regex, '');
+        let declare_area = clickArea.toString();
+        declare_area = declare_area.replace(/^([^,]+),([^,]+)(.*)$/, '$1,0$3');
+        
         const params = {
           uid: this.currentUid,
           properties: {
-            "declare_area": result,
+            "declare_area": `{${declare_area}}`,
           }
         };
         this.freshAreaDialog(params);
@@ -856,15 +877,6 @@ export default {
         return minX < clickX && clickX < maxX && minY < clickY && clickY < maxY;
       });
       return clickArea;
-    },
-    // 判断鼠标是否在顶点方块内
-    isMouseInSquare(mouseX, mouseY, squareSettings, Rect) {
-      return (
-        mouseX > squareSettings.x &&
-        mouseX < squareSettings.x + squareSettings.width &&
-        mouseY > squareSettings.y &&
-        mouseY < squareSettings.y + squareSettings.height
-      );
     },
     // 区域编辑缩放
     scaleHelpFunc(clickX, clickY) {
@@ -1036,6 +1048,36 @@ export default {
           break;
       }
     },
+    handleFinalyArea(type) {
+      if(this.editArea) { // 编辑区域的移动单独处理
+        this.isEditArea = type;
+        this.moveHelpFunc();
+        this.drawBorder(this.context2);
+        return
+      }
+      const offset = this.drawConfig.grap / 10 * 2; // 计算1分米对应的canvas像素
+      const [startX, startY, maxXDist, maxYDist] = this.finalyScreenArea;
+      switch (type) {
+        case 'moveUp':  //上移
+          this.finalyScreenArea = [startX, startY - offset, maxXDist, maxYDist];
+          this.finalyArea = [startX, startY - offset, maxXDist, maxYDist];
+          break;
+        case 'moveDown': //下移
+          this.finalyScreenArea = [startX, startY + offset, maxXDist, maxYDist];
+          this.finalyArea = [startX, startY + offset, maxXDist, maxYDist];
+          break;
+        case 'moveLeft':  //左移
+          this.finalyScreenArea = [startX - offset, startY, maxXDist, maxYDist];
+          this.finalyArea = [startX - offset, startY, maxXDist, maxYDist];
+          break;
+        case 'moveRight':  //右移
+          this.finalyScreenArea = [startX + offset, startY, maxXDist, maxYDist];
+          this.finalyArea = [startX + offset, startY, maxXDist, maxYDist];
+          break;
+      }
+      this.drawBorder(this.context2);
+      this.drawArea(this.context2, ...this.finalyScreenArea, this.currentType.color);
+    },
     getPixelPoint(pointArr) {
       const temp = [];
       if (this.currentInsType == 0) {
@@ -1074,8 +1116,6 @@ export default {
       }
       return temp;
     },
-    // 判断当前点是否在探测周界区域
-    inBorderArea() { },
     // 判断监护床中心点是否在监护范围中
     inWardArea(startX, startY, maxXDist, maxYDist) {
       const leng = +maxXDist / this.drawConfig.grap / 2; //床的长度
@@ -1109,11 +1149,12 @@ export default {
               return;
             }
             this.radarProp = response.data.data;
-            const { radar_install_style, rectangle, declare_area, } = response.data.data;
+            const { radar_install_style, radar_install_height, rectangle, declare_area, } = response.data.data;
             const [rightTop, leftTop, rightBottom, leftBottom] = rectangle.replace(/^\{|\}/g, "").split(";");
             const [leftBorder, rightBorder, frontBorder, backBorder] = this.rectangleToBorder(leftTop, leftBottom, rightTop, rightBottom);
             this.CornerData = {
               installType: radar_install_style,
+              height: radar_install_height,
               leftBorder: Math.abs(leftBorder),
               rightBorder: Math.abs(rightBorder),
               frontBorder: Math.abs(frontBorder),
@@ -1241,16 +1282,15 @@ export default {
     },
     handleAddArea() {
       if(this.sizeWidth<10 || this.sizeHeight<10) {
-        Message.info('绘制区域太小'.replace('x*x', '10*10'));
+        Message.info('绘制区域不能小于x*x'.replace('x*x', '10*10'));
         return
       }
       if(this.editArea) { // 编辑区域，直接走保存
-        const regex = new RegExp(`(^|,)\\{${this.editArea[0]},.*?\\}(,|$)`, 'g');
-        const result = this.radarProp['declare_area'].replace(regex, `,{${this.editArea.toString()}},`);
+        console.log(1111, this.editArea.toString());
         const params = {
           uid: this.currentUid,
           properties: {
-            "declare_area": result,
+            "declare_area": `{${this.editArea.toString()}}`,
           }
         };
         this.freshAreaDialog(params);
@@ -1261,14 +1301,14 @@ export default {
       }
       // 小程序版canvas方案
       if (!this.finalyArea) {
-        Message.info('监护床尺寸必须在10米到30米之间');
+        Message.info('请先滑动区域');
         return;
       }
       const [startX, startY, maxXDist, maxYDist] = this.finalyArea;
       // 判断监护床的“中心点”半径是否在雷达下方
       const inWardArea = this.inWardArea(startX, startY, maxXDist, maxYDist);
       if (this.currentTypeId == 5 && inWardArea != false) {
-        this.$confirm(inWardArea.msg, '监护床尺寸必须在10米到30米之间', {
+        MessageBox.confirm(inWardArea.msg, '请重新绘制', {
           confirmButtonText: '确认',
           showClose: false,
           showCancelButton: false,
@@ -1302,16 +1342,10 @@ export default {
       // 组装params
       const areaIds = this.currentArea.map((item) => +item[0]);
       const areaIdList = Array.from(Array(17), (v, k) => k).filter((e) => !areaIds.includes(e)); // 更新全局areaId列表
-      let declare_area = this.radarProp.declare_area;
-      if(!declare_area) {
-        declare_area = `{${areaIdList[0]},5,${rightTopPoint},${leftTopPoint},${rightBottomPoint},${leftBottomPoint}},`;
-      }else {
-        declare_area += `{${areaIdList[0]},5,${rightTopPoint},${leftTopPoint},${rightBottomPoint},${leftBottomPoint}},`;
-      }
       const params = {
         uid: this.currentUid,
         properties: {
-          "declare_area": declare_area,
+          "declare_area": `{${areaIdList[0]},${this.currentTypeId},${rightTopPoint},${leftTopPoint},${rightBottomPoint},${leftBottomPoint}}`,
         }
       };
       this.freshAreaDialog(params);
@@ -1329,6 +1363,20 @@ export default {
       this.currentType = null;
       this.areaType = null;
       this.menuType = null;
+    },
+    handleCallDev() {
+      MessageBox.confirm(`是否进行呼叫`, '系统提示')
+        .then(() => {
+          this.showMetting = true;
+        })
+        .catch(() => {});
+    },
+    handleMettingEvent() {
+      this.showMetting = false;
+      this.isMetting = true;
+      setTimeout(() => {
+        this.isMetting = false;
+      }, 3000);
     },
   },
 };
