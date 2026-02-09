@@ -78,7 +78,7 @@
               </el-radio-button>
             </el-radio-group>
             <div style="flex:1;display:flex;align-items:center;height:40px;margin-left:15px;">
-              <img style="width: 14px; height: 14px" src="@/assets/chartBed/tips.png" />
+              <img style="width: 14px; height: 14px" src="@/assets/images/tips.png" />
               <span style="font-size:14px;color:gray;word-break:auto-phrase">滑动绘制区域</span>
             </div>
           </el-row>
@@ -92,12 +92,12 @@
             <p style="font-size:18px;font-weight:bold;">区域尺寸</p>
             <p style="font-size:14px;color:gray;margin:10px 0;">宽度</p>
             <el-input type="number" v-model="sizeWidth" @blur="sizeChange" step="10" @change="(val) => sizeWidth=Math.round(val/10)*10" :disabled="!currentType">
-              <template slot="prepend"><img style="width: 14px; height: 14px" src="@/assets/chartBed/area-width.png" /></template>
+              <template slot="prepend"><img style="width: 14px; height: 14px" src="@/assets/images/area-width.png" /></template>
               <template slot="append">CM</template>
             </el-input>
             <p style="font-size:14px;color:gray;margin:10px 0;">长度</p>
             <el-input type="number" v-model="sizeHeight" @blur="sizeChange" step="10" @change="(val) => sizeHeight=Math.round(val/10)*10" :disabled="!currentType">
-              <template slot="prepend"><img style="width: 14px; height: 14px" src="@/assets/chartBed/area-height.png" /></template>
+              <template slot="prepend"><img style="width: 14px; height: 14px" src="@/assets/images/area-height.png" /></template>
               <template slot="append">CM</template></el-input>
           </el-row>
           <el-row style="margin-top:40px;padding:0 10px;">
