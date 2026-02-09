@@ -3,12 +3,23 @@
     <section class="flex-j-sb" style="flex:1;">
       <!-- MQTT测试Demo -->
       <div style="margin: 10px 20px; padding: 10px; background: #e8f5e9; border-radius: 4px;">
-        <div style="font-weight: bold; margin-bottom: 10px;">MQTT测试Demo</div>
-        <div style="margin-bottom: 10px;">
-          <el-button type="success" size="small" @click="mqttConnect">测试连接</el-button>
-          <el-button type="primary" size="small" @click="mqttSubscribe" :disabled="!mqttConnected">测试订阅</el-button>
-          <el-button type="warning" size="small" @click="mqttPublish" :disabled="!mqttConnected">测试发布</el-button>
-          <el-button type="danger" size="small" @click="mqttDisconnect" :disabled="!mqttConnected">断开连接</el-button>
+        <div style="font-weight: bold; margin-bottom: 10px;">MQTT服务器</div>
+        <div style="display: flex; flex-flow: column nowrap; align-items: center;justify-content: center;">
+          <div style="margin-bottom: 20px;">
+            uid: <el-input v-model="currentUid" placeholder="请输入UID" @change="changeUid" style="width: 200px; margin-right: 10px;"></el-input>
+          </div>
+          <div style="margin-bottom: 20px;">
+            addr: <el-input v-model="mqttConfig.host" placeholder="请输入mqtt服务器地址" style="width: 200px; margin-right: 10px;"></el-input>
+          </div>
+          <div style="margin-bottom: 20px;">
+            subTime: <el-input v-model="mqttConfig.subTime" placeholder="请输入订阅时长" style="width: 200px; margin-right: 10px;">
+              <template slot="append">s</template>
+            </el-input>
+          </div>
+          <div style="margin-bottom: 20px;">
+            <el-button type="success" size="small" @click="mqttConnect">连接mqtt服务器</el-button>
+            <el-button type="danger" size="small" @click="mqttDisconnect" :disabled="!mqttConnected">断开mqtt服务器</el-button>
+          </div>
         </div>
       </div>
       <el-card class="box-card mb10" id="chartsMax" style="height: 790px; position: relative">
@@ -154,11 +165,11 @@ export default {
         loading: false,
         open: false,
       },
+      currentUid: localStorage.getItem('currentUid') || 'AD8A61A002FF',
       currentValidArea: [], //当前的有效区域
       currentInsType: 1, // 默认侧装
       currentRectangle: [], // 房间坐标
       currentArea: [], // 雷达区域
-      currentAreaSource: [], // 雷达区域
       context: null,
       firstPoints: null,
       drawWidth: 800,
@@ -253,6 +264,7 @@ export default {
         protocolVersion: 5,
         clean: true,
         connectTimeout: 30 * 1000,
+        subTime: 10,
       },
       mqttConnected: false,
       mqttClient: null
@@ -286,6 +298,9 @@ export default {
     next();
   },
   methods: {
+    changeUid() {
+      localStorage.setItem('currentUid', this.currentUid);
+    },
     expTrack(track) {
       const tempData = [[], [], [], [], [], [], [], []];
       track.forEach(([id, x, y, z, vx, vy, vz, minR, minAZI, minELE, maxR, maxAZI, maxELE, postion, event, rsv]) => {
@@ -345,6 +360,7 @@ export default {
       this.mqttClient.on('connect', () => {
         this.$message.success('MQTT连接成功');
         this.mqttConnected = true;
+        this.mqttSubscribe();
       });
       this.mqttClient.on('error', (error) => {
         this.$message.error('MQTT连接失败: ' + error.message);
@@ -361,11 +377,12 @@ export default {
         this.$message.error('请先连接MQTT服务器');
         return;
       }
-      this.mqttClient.subscribe("/monitor/88/AD8A61A002FF/post", { qos: 0 }, (error) => {
+      this.mqttClient.subscribe(`/monitor/88/${this.currentUid}/post`, { qos: 0 }, (error) => {
         if (error) {
           this.$message.error('订阅失败: ' + error.message);
         } else {
-          this.$message.success('订阅成功');
+          // this.$message.success('订阅成功');
+          this.mqttPublish();
         }
       });
       // 监听消息
@@ -381,12 +398,12 @@ export default {
         this.$message.error('请先连接MQTT服务器');
         return;
       }
-      const testMessage = {"cmd":"subscription","data":{"content":0,"duration":10}};
-      this.mqttClient.publish('/monitor/88/AD8A61A002FF/get', JSON.stringify(testMessage), (error) => {
+      const testMessage = {"cmd":"subscription","data":{"content":0,"duration":this.mqttConfig.subTime}};
+      this.mqttClient.publish(`/monitor/88/${this.currentUid}/get`, JSON.stringify(testMessage), (error) => {
         if (error) {
           this.$message.error('发布失败: ' + error.message);
         } else {
-          this.$message.success('发布成功');
+          // this.$message.success('发布成功');
         }
       });
     },
@@ -614,7 +631,7 @@ export default {
           let areaTitle = this.baseList.find(item => item.areaType==pointArr[1]).title;
           this.drawText(context, areaTitle, startX + maxXDist / 2, startY, "#080808");
         };
-        this.currentAreaSource.forEach((item) => {
+        this.currentArea.forEach((item) => {
           rectangleToArea(item);
         });
         // 编辑区域，在区域四角上补充方块
@@ -772,9 +789,8 @@ export default {
       MessageBox.confirm("确认删除选中区域吗？", "系统提示").then(() => {
         const regex = new RegExp(`(^|,)\\{${clickArea[0][0]},.*?\\}(,|$)`, 'g');
         const result = this.radarProp['declare_area'].replace(regex, '');
-        console.log(1111, clickArea, result);
         const params = {
-          uid: "AD8A61A002FF",
+          uid: this.currentUid,
           properties: {
             "declare_area": result,
           }
@@ -805,7 +821,6 @@ export default {
         return;
       }
       this.drawTimer = setInterval(() => {
-        this.currentArea = JSON.parse(JSON.stringify(this.currentAreaSource));
         this.drawBorder(this.context2);
         this.drawArea(this.context2, ...this.finalyArea, this.currentType.color);
         this.finalyScreenArea = this.finalyArea;
@@ -952,7 +967,7 @@ export default {
         case 'move':
           const disdX = -(this.moveEvent.clientX - this.downEvent.clientX)/10;
           const disdY = (this.moveEvent.clientY - this.downEvent.clientY)/10;
-          const editArea = this.currentAreaSource.find(item => item[0] == this.editArea[0]);
+          const editArea = this.currentArea.find(item => item[0] == this.editArea[0]);
           this.currentArea.forEach(item => {
             if(item[0] === this.editArea[0]) {
               this.editArea = [
@@ -1088,7 +1103,7 @@ export default {
     async getAttrList() {
       try {
         return await new Promise((resolve, reject) => {
-          axios.get("/prod-api/get/prop?uid=AD8A61A002FF").then((response) => {
+          axios.get(`/prod-api/get/prop?uid=${this.currentUid}`).then((response) => {
             if (response.data.code !== 200) {
               return;
             }
@@ -1139,7 +1154,6 @@ export default {
               .filter((x_2) => x_2 !== "")
               .map(Number) : [];
             this.currentArea = splitArray(pointArr, 10);
-            this.currentAreaSource = splitArray(pointArr, 10);
             this.drawBackground = null;
             this.drawBorder(this.context);
             // table表格
@@ -1176,8 +1190,6 @@ export default {
         const canvas = this.$refs.myCanvas2;
         this.myCanvas2 = canvas;
         this.context2 = canvas.getContext("2d");
-
-        // this.drawGrid(this.context2);
         this.drawBorder(this.context2);
       });
     },
@@ -1207,17 +1219,14 @@ export default {
         return
       }
       if(this.editArea) { // 编辑区域，直接走保存
-        const params = [];
-        this.currentArea.forEach(item => {
-          params.push({
-            uid: this.currentDev.uid,
-            eqtTypeId: this.currentDev.eqtTypeId, 
-            coordValue: item.slice(2).join(','),
-            coordName: '',
-            type: item[1],
-            coordKey: item[0],
-          });
-        })
+        const regex = new RegExp(`(^|,)\\{${this.editArea[0]},.*?\\}(,|$)`, 'g');
+        const result = this.radarProp['declare_area'].replace(regex, `,{${this.editArea.toString()}},`);
+        const params = {
+          uid: this.currentUid,
+          properties: {
+            "declare_area": result,
+          }
+        };
         this.freshAreaDialog(params);
         return
       }
@@ -1273,9 +1282,8 @@ export default {
       }else {
         declare_area += `{${areaIdList[0]},5,${rightTopPoint},${leftTopPoint},${rightBottomPoint},${leftBottomPoint}},`;
       }
-      console.log(2222, declare_area);
       const params = {
-        uid: "AD8A61A002FF",
+        uid: this.currentUid,
         properties: {
           "declare_area": declare_area,
         }
