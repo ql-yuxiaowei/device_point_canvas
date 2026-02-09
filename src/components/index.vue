@@ -311,7 +311,7 @@ export default {
     // MQTT测试连接
     mqttConnect() {
       if (!this.mqttConfig.host) {
-        this.$message.error('请输入MQTT地址');
+        Message.error('请输入MQTT地址');
         return;
       }
       const options = {
@@ -320,30 +320,30 @@ export default {
       };
       this.mqttClient = mqtt.connect(this.mqttConfig.host, options);
       this.mqttClient.on('connect', () => {
-        this.$message.success('MQTT连接成功');
+        Message.success('MQTT连接成功');
         this.mqttConnected = true;
         this.mqttSubscribe();
       });
       this.mqttClient.on('error', (error) => {
-        this.$message.error('MQTT连接失败: ' + error.message);
+        Message.error('MQTT连接失败: ' + error.message);
         this.mqttConnected = false;
       });
       this.mqttClient.on('close', () => {
-        this.$message.warning('MQTT连接已关闭');
+        Message.warning('MQTT连接已关闭');
         this.mqttConnected = false;
       });
     },
     // MQTT测试订阅
     mqttSubscribe() {
       if (!this.mqttClient || !this.mqttConnected) {
-        this.$message.error('请先连接MQTT服务器');
+        Message.error('请先连接MQTT服务器');
         return;
       }
       this.mqttClient.subscribe(`/monitor/88/${this.currentUid}/post`, { qos: 0 }, (error) => {
         if (error) {
-          this.$message.error('订阅失败: ' + error.message);
+          Message.error('订阅失败: ' + error.message);
         } else {
-          // this.$message.success('订阅成功');
+          Message.success('订阅成功');
           this.mqttPublish();
         }
       });
@@ -1191,7 +1191,7 @@ export default {
         }
       });
       if (Object.keys(changes).length === 0) {
-        this.$message.info('没有修改的内容');
+        Message.info('没有修改的内容');
         return;
       }
       const params = {
@@ -1199,11 +1199,11 @@ export default {
         properties: changes
       };
       axios.post("/prod-api/set/prop", params).then((response) => {
-        this.$message.success('保存成功');
+        Message.success('保存成功');
         this.getAttrList();
       }).catch((error) => {
         console.error('保存失败:', error);
-        this.$message.error('保存失败');
+        Message.error('保存失败');
       });
     },
     handleAddArea() {
@@ -1312,6 +1312,7 @@ export default {
 <style scoped>
 @import "./index.scss";
 .container {
+  position: relative;
   box-sizing: border-box;
   width: 100%;
   height: 100%;
