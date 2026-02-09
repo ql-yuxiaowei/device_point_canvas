@@ -118,7 +118,7 @@
     </el-dialog>
 
     <!-- 语音通话 -->
-    <div v-if="showMetting" style="position:absolute;top:30%;left:50%;transform:translate(-50%, -50%);width:50vh;height:80vh;z-index: 999;">
+    <div v-if="showMetting" style="position:absolute;top:50%;left:50%;transform:translate(-50%, -50%);width:50vh;height:80vh;z-index: 999;">
       <metting ref="mettingRef" :uid="currentUid" @metting-event="handleMettingEvent" />
     </div>
     
