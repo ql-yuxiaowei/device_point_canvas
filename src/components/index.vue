@@ -17,8 +17,8 @@
             </el-input>
           </div>
           <div style="margin-bottom: 20px;">
-            <el-button type="success" size="small" @click="mqttConnect">连接mqtt服务器</el-button>
-            <el-button type="danger" size="small" @click="mqttDisconnect" :disabled="!mqttConnected">断开mqtt服务器</el-button>
+            <el-button type="success" @click="mqttConnect">Mqtt连接</el-button>
+            <el-button type="danger" @click="mqttDisconnect" :disabled="!mqttConnected">Mqtt断开</el-button>
           </div>
         </div>
       </div>
@@ -48,6 +48,7 @@
       <el-card class="box-card mb10" id="chartsMax" style="flex: 1; height: 790px; position: relative">
         <div slot="header" class="clearfix">
           <span>功能属性</span>
+          <el-button type="primary" size="small" @click="saveRadarProps" style="float: right;">保存</el-button>
         </div>
         <el-table ref="multipleTable" :data="radarPropArr" height="700px">
           <el-table-column label="key" align="center" prop="key" />
@@ -255,6 +256,7 @@ export default {
       sizeHeight: null,
       radarProp: {},
       radarPropArr: [],
+      radarPropArrSource: [],
       mqttConfig: {
         host: 'ws://192.168.1.70:8083/mqtt',
         username: '',
@@ -1164,6 +1166,7 @@ export default {
               }
               return { key: key, value: value_2 };
             });
+            this.radarPropArrSource = JSON.parse(JSON.stringify(this.radarPropArr));
           }).catch(() => {
           });
           resolve();
@@ -1211,6 +1214,30 @@ export default {
       }).catch(() => {
         Message.error('操作失败');
         this.AreaDialog.loading = false;
+      });
+    },
+    saveRadarProps() {
+      const changes = {};
+      this.radarPropArr.forEach(item => {
+        const sourceItem = this.radarPropArrSource.find(source => source.key === item.key);
+        if (sourceItem && sourceItem.value !== item.value) {
+          changes[item.key] = item.value;
+        }
+      });
+      if (Object.keys(changes).length === 0) {
+        this.$message.info('没有修改的内容');
+        return;
+      }
+      const params = {
+        uid: "AD8A61A002FF",
+        properties: changes
+      };
+      axios.post("/prod-api/set/prop", params).then((response) => {
+        this.$message.success('保存成功');
+        this.getAttrList();
+      }).catch((error) => {
+        console.error('保存失败:', error);
+        this.$message.error('保存失败');
       });
     },
     handleAddArea() {
