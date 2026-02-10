@@ -3,16 +3,16 @@
     <section class="flex-j-sb" style="flex:1;">
       <!-- MQTT测试Demo -->
       <div style="margin: 10px 20px; padding: 10px; background: #e8f5e9; border-radius: 4px;">
+        <div style="margin-bottom: 20px;">
+          uid: <el-input v-model="currentUid" placeholder="请输入UID" style="width: 200px; margin-right: 10px;"></el-input>
+        </div>
         <div style="font-weight: bold; margin-bottom: 10px;">MQTT服务器</div>
         <div style="display: flex; flex-flow: column nowrap; align-items: center;justify-content: center;">
-          <div style="margin-bottom: 20px;">
-            uid: <el-input v-model="currentUid" placeholder="请输入UID" @change="changeUid" style="width: 200px; margin-right: 10px;"></el-input>
-          </div>
           <div style="margin-bottom: 20px;">
             addr: <el-input v-model="mqttConfig.host" placeholder="请输入mqtt服务器地址" style="width: 200px; margin-right: 10px;"></el-input>
           </div>
           <div style="margin-bottom: 20px;">
-            subTime: <el-input v-model="mqttConfig.subTime" placeholder="请输入订阅时长" @change="changeSubTime" style="width: 200px; margin-right: 10px;">
+            subTime: <el-input v-model="mqttConfig.subTime" placeholder="请输入订阅时长" style="width: 200px; margin-right: 10px;">
               <template slot="append">s</template>
             </el-input>
           </div>
@@ -20,6 +20,18 @@
             <el-button type="success" @click="mqttConnect">Mqtt连接</el-button>
             <el-button type="danger" @click="mqttDisconnect" :disabled="!mqttConnected">Mqtt断开</el-button>
           </div>
+        </div>
+        <div style="font-weight: bold; margin-bottom: 10px;">设备属性(配置代理可规避跨域)</div>
+        <div style="display: flex; flex-flow: column nowrap; align-items: center;justify-content: center;">
+          <div style="margin-bottom: 20px;">
+            getProp: <el-input v-model="httpConfig.getProp" placeholder="请输入http地址" style="width: 200px; margin-right: 10px;"></el-input>
+          </div>
+          <div style="margin-bottom: 20px;">
+            setProp: <el-input v-model="httpConfig.setProp" placeholder="请输入http地址" style="width: 200px; margin-right: 10px;"></el-input>
+          </div>
+        </div>
+        <div style="margin-bottom: 20px;">
+          <el-button type="success" @click="saveForm">暂存表单</el-button>
         </div>
       </div>
       <el-card class="box-card mb10" id="chartsMax" style="height: 790px; position: relative">
@@ -215,7 +227,7 @@ export default {
       radarPropArr: [],
       radarPropArrSource: [],
       mqttConfig: {
-        host: 'ws://192.168.1.70:8083/mqtt',
+        host: localStorage.getItem('mqttHost') || 'ws://192.168.1.70:8083/mqtt',
         username: '',
         password: '',
         keepalive: 60,
@@ -224,6 +236,10 @@ export default {
         clean: true,
         connectTimeout: 30 * 1000,
         subTime: localStorage.getItem('subTime') || 10,
+      },
+      httpConfig: {
+        getProp: localStorage.getItem('getProp') || "/prod-api/get/prop",
+        setProp: localStorage.getItem('setProp') || "/prod-api/set/prop",
       },
       mqttConnected: false,
       mqttClient: null
@@ -257,11 +273,12 @@ export default {
     next();
   },
   methods: {
-    changeUid() {
+    saveForm() {
       localStorage.setItem('currentUid', this.currentUid);
-    },
-    changeSubTime() {
+      localStorage.setItem('mqttHost', this.mqttConfig.host);
       localStorage.setItem('subTime', this.mqttConfig.subTime);
+      localStorage.setItem('getProp', this.httpConfig.getProp);
+      localStorage.setItem('setProp', this.httpConfig.setProp);
     },
     expTrack(track) {
       const tempData = [[], [], [], [], [], [], [], []];
@@ -1070,7 +1087,8 @@ export default {
     async getAttrList() {
       try {
         return await new Promise((resolve, reject) => {
-          axios.get(`/prod-api/get/prop?uid=${this.currentUid}`).then((response) => {
+          const getProp = this.httpConfig.getProp;
+          axios.get(getProp + `?uid=${this.currentUid}`).then((response) => {
             if (response.data.code !== 200) {
               return;
             }
@@ -1164,7 +1182,8 @@ export default {
     },
     freshAreaDialog(params) {
       this.AreaDialog.loading = true;
-      axios.post("/prod-api/set/prop", params).then((response) => {
+      const setProp = this.httpConfig.setProp;
+      axios.post(setProp, params).then((response) => {
         if(response.data.code !== 200) {
           return;
         }
@@ -1198,7 +1217,8 @@ export default {
         uid: "AD8A61A002FF",
         properties: changes
       };
-      axios.post("/prod-api/set/prop", params).then((response) => {
+      const setProp = this.httpConfig.setProp;
+      axios.post(setProp, params).then((response) => {
         Message.success('保存成功');
         this.getAttrList();
       }).catch((error) => {
