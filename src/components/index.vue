@@ -70,7 +70,7 @@
           <el-table-column label="value" class-name="column-bg-color-editable" width="300" show-overflow-tooltip>
             <template scope="scope">
               <div class="input-box">
-                <el-input size="small" v-model="scope.row.value" :disabled="['fall_param', 'heart_breath_param', 'accelera', 'wifi_rssi', 'declare_area'].includes(scope.row.key)"></el-input>
+                <el-input size="small" v-model="scope.row.value" :disabled="['fall_param', 'heart_breath_param', 'accelera', 'wifi_rssi'].includes(scope.row.key)"></el-input>
               </div>
             </template>
           </el-table-column>
@@ -611,7 +611,7 @@ export default {
         this.currentArea.forEach((item) => {
           rectangleToArea(item);
         });
-        // 编辑区域，在区域四角上补充方块
+        // 编辑区域，给区域描边
         if(this.editArea) {
           const temp = this.getPixelPoint(this.editArea.slice(2));
           const [startX, startY, maxXDist, maxYDist] = this.drawAreaPoint(temp);
@@ -1060,30 +1060,6 @@ export default {
       }
       return temp;
     },
-    // 判断监护床中心点是否在监护范围中
-    inWardArea(startX, startY, maxXDist, maxYDist) {
-      const leng = +maxXDist / this.drawConfig.grap / 2; //床的长度
-      const wid = +maxYDist / this.drawConfig.grap / 2; //床的宽度
-      if ((leng > 2 && wid > 2) || (leng > 2 || wid > 2)) {
-        return { type: 1, msg: '监护床尺寸不能小于2米' };
-      }
-      const { clickX, clickY } = this.toDrawPoint(startX + maxXDist / 2, startY + maxYDist / 2);
-      const { installType, height } = this.CornerData;
-      const x = Math.abs(clickX / 10);
-      const y = Math.abs(clickY / 10);
-      const z = height;  //分米==》米
-      if (z < 1.5 || z > 3.5) {
-        return { type: 1, msg: '监护床高度必须在1.5米到3.5米之间' };
-      }
-      if (installType == 1 && (x > 0.5 || y > 1.5)) {
-        return { type: 2, msg: '监护床侧装尺寸不能大于0.5米' };
-      } else if (installType == 2 && (x > 0.5 || y > 1.5)) {
-        return { type: 2, msg: '监护床墙装尺寸不能大于0.5米' };
-      } else if (installType == 0 && (x > 0.5 || y > 0.5)) {
-        return { type: 2, msg: '监护床顶装尺寸不能大于0.5米' };
-      }
-      return false;
-    },
     async getAttrList() {
       try {
         return await new Promise((resolve, reject) => {
@@ -1251,18 +1227,6 @@ export default {
         return;
       }
       const [startX, startY, maxXDist, maxYDist] = this.finalyArea;
-      // 判断监护床的“中心点”半径是否在雷达下方
-      const inWardArea = this.inWardArea(startX, startY, maxXDist, maxYDist);
-      if (this.currentTypeId == 5 && inWardArea != false) {
-        MessageBox.confirm(inWardArea.msg, '请重新绘制', {
-          confirmButtonText: '确认',
-          showClose: false,
-          showCancelButton: false,
-          type: "warning",
-          center: true,
-        })
-        return;
-      }
       const grap = this.drawConfig.grap;
       let leftTopPoint, rightTopPoint, leftBottomPoint, rightBottomPoint;
       if (this.currentInsType == 0) {
